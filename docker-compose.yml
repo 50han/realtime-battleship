@@ -1,0 +1,121 @@
+# Full stack: PostgreSQL, Redis, the Java game server, and the React client.
+#
+#   cp .env.example .env
+#   docker compose up --build
+#
+# Then open http://localhost:5173.
+
+name: battleship
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-battleship}
+      POSTGRES_USER: ${POSTGRES_USER:-battleship}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-battleship}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-battleship} -d ${POSTGRES_DB:-battleship}"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  redis:
+    image: redis:7-alpine
+    # appendonly keeps the matchmaking queue and reconnect snapshots across a
+    # container restart instead of dropping every in-flight match.
+    command: ["redis-server", "--appendonly", "yes", "--save", "60", "1"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  backend:
+    build:
+      context: ./backend
+    environment:
+      APP_ENV: ${APP_ENV:-development}
+      PORT: 8080
+      DATABASE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-battleship}
+      DATABASE_USER: ${POSTGRES_USER:-battleship}
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-battleship}
+      DATABASE_POOL_SIZE: ${DATABASE_POOL_SIZE:-12}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET: ${JWT_SECRET:-dev-only-insecure-secret-change-me-0123456789abcdef}
+      JWT_ISSUER: ${JWT_ISSUER:-battleship-server}
+      JWT_TTL_SECONDS: ${JWT_TTL_SECONDS:-86400}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
+      ADVERTISED_WS_URL: ${ADVERTISED_WS_URL:-ws://localhost:8080/ws}
+      TURN_TIMEOUT_SECONDS: ${TURN_TIMEOUT_SECONDS:-45}
+      RECONNECT_GRACE_SECONDS: ${RECONNECT_GRACE_SECONDS:-60}
+      INSTANCE_ID: backend-1
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # A second game server, for exercising cross-instance matchmaking:
+  #   docker compose --profile scale up -d backend2
+  # Redis pairs players regardless of which instance they are connected to, and
+  # the client is redirected to whichever instance owns the resulting match.
+  backend2:
+    profiles: ["scale"]
+    build:
+      context: ./backend
+    environment:
+      APP_ENV: ${APP_ENV:-development}
+      PORT: 8080
+      DATABASE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-battleship}
+      DATABASE_USER: ${POSTGRES_USER:-battleship}
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-battleship}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET: ${JWT_SECRET:-dev-only-insecure-secret-change-me-0123456789abcdef}
+      JWT_ISSUER: ${JWT_ISSUER:-battleship-server}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
+      # Must be the URL that reaches THIS instance from the browser.
+      ADVERTISED_WS_URL: ws://localhost:8081/ws
+      INSTANCE_ID: backend-2
+    ports:
+      - "8081:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  frontend:
+    image: node:22-alpine
+    working_dir: /app
+    command: ["sh", "-c", "npm install && npm run dev -- --host 0.0.0.0"]
+    environment:
+      VITE_API_URL: ${VITE_API_URL:-http://localhost:8080}
+      VITE_WS_URL: ${VITE_WS_URL:-ws://localhost:8080/ws}
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - frontend-node-modules:/app/node_modules
+    depends_on:
+      # Wait for the backend to be genuinely serving, not just started, so the
+      # first page load does not race the migrations.
+      backend:
+        condition: service_healthy
+
+volumes:
+  postgres-data:
+  redis-data:
+  frontend-node-modules:

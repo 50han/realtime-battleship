@@ -1,0 +1,327 @@
+/* Battleship — dark naval theme.
+   One stylesheet; components carry semantic class names instead of inline
+   style objects, so spacing and colour stay consistent across screens. */
+
+:root {
+  --bg:            #0a1420;
+  --surface:       #10202f;
+  --surface-2:     #16293b;
+  --border:        #1e3a52;
+  --text:          #e3edf5;
+  --muted:         #8ba6bd;
+  --accent:        #3b93d9;
+  --accent-strong: #1d6fb8;
+  --water:         #0d2a44;
+  --water-hover:   #1a5c96;
+  --ship:          #2f7f4f;
+  --hit:           #cf4038;
+  --miss:          #3f5768;
+  --win:           #6fcf8b;
+  --loss:          #ef6b64;
+  --warn:          #e0a33c;
+  --radius:        8px;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4 { margin: 0 0 12px; line-height: 1.25; }
+h1 { font-size: 28px; }
+h2 { font-size: 21px; }
+h3 { font-size: 16px; }
+h4 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+
+.muted { color: var(--muted); }
+.small { font-size: 12px; }
+.error { color: var(--loss); }
+.warning { color: var(--warn); }
+.win  { color: var(--win); }
+.loss { color: var(--loss); }
+.spacer { flex: 1; }
+
+/* ---- layout ---------------------------------------------------------- */
+
+.app { min-height: 100vh; display: flex; flex-direction: column; }
+
+.app-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 20px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.brand { font-weight: 600; letter-spacing: .02em; }
+
+.conn { font-size: 12px; padding: 2px 8px; border-radius: 99px; border: 1px solid var(--border); }
+.conn-open         { color: var(--win); border-color: #2c5f42; }
+.conn-reconnecting,
+.conn-connecting   { color: var(--warn); border-color: #6b5220; }
+.conn-closed,
+.conn-idle         { color: var(--loss); border-color: #6b2f2c; }
+
+main { padding: 20px; flex: 1; }
+
+.centered {
+  min-height: 70vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px;
+}
+
+/* ---- controls -------------------------------------------------------- */
+
+button {
+  font: inherit;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  padding: 9px 16px;
+  cursor: pointer;
+  transition: background-color .15s, border-color .15s, opacity .15s;
+}
+button:disabled { opacity: .5; cursor: not-allowed; }
+
+button.primary   { background: var(--accent-strong); color: #fff; }
+button.primary:hover:not(:disabled) { background: var(--accent); }
+button.secondary { background: transparent; color: var(--text); border-color: var(--border); }
+button.secondary:hover:not(:disabled) { border-color: var(--accent); }
+button.danger    { background: transparent; color: var(--loss); border-color: #6b2f2c; }
+button.danger:hover:not(:disabled) { background: #2a1615; }
+button.link      { background: none; color: var(--muted); text-decoration: underline; padding: 4px; }
+button.link:hover { color: var(--text); }
+
+label { display: block; font-size: 12px; color: var(--muted); margin: 12px 0 4px; }
+
+input {
+  width: 100%;
+  padding: 10px 12px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font: inherit;
+}
+input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+
+/* ---- auth ------------------------------------------------------------ */
+
+.auth-card { width: 100%; max-width: 380px; display: flex; flex-direction: column; }
+.auth-card .primary { margin-top: 18px; }
+
+/* ---- notices --------------------------------------------------------- */
+
+.notice {
+  margin: 0 20px 12px;
+  padding: 10px 14px;
+  border-radius: 6px;
+  background: #1b2f42;
+  border: 1px solid var(--border);
+  font-size: 14px;
+  cursor: pointer;
+}
+.notice-warn { background: #33280f; border-color: #6b5220; color: #f0cf8f; cursor: default; }
+
+/* ---- lobby ----------------------------------------------------------- */
+
+.lobby-layout {
+  display: grid;
+  grid-template-columns: minmax(280px, 380px) 1fr;
+  gap: 20px;
+  align-items: start;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.lobby-panels { display: grid; gap: 20px; }
+
+.queue-card .primary, .queue-card .secondary { width: 100%; margin-top: 8px; }
+.searching { color: var(--accent); }
+
+.stat-row { display: flex; gap: 24px; margin: 16px 0; }
+.stat-row dt { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.stat-row dd { margin: 2px 0 0; font-size: 22px; font-variant-numeric: tabular-nums; }
+
+/* ---- tables ---------------------------------------------------------- */
+
+.table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.table th {
+  text-align: left;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--muted);
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border);
+}
+.table td { padding: 8px; border-bottom: 1px solid #16293b; }
+.table tr:last-child td { border-bottom: none; }
+.table tr.is-me { background: #16293b; }
+
+.badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 4px;
+  border: 1px solid currentColor;
+}
+.badge-win  { color: var(--win); }
+.badge-loss { color: var(--loss); }
+.badge-unfinished { color: var(--muted); }
+
+/* ---- game ------------------------------------------------------------ */
+
+.game-layout {
+  display: grid;
+  grid-template-columns: 1fr minmax(260px, 320px);
+  grid-template-areas: "status status" "boards side";
+  gap: 20px;
+  max-width: 1240px;
+  margin: 0 auto;
+}
+.game-status { grid-area: status; text-align: center; }
+.boards      { grid-area: boards; display: flex; flex-wrap: wrap; gap: 20px; }
+.game-side   { grid-area: side; display: flex; flex-direction: column; gap: 12px; }
+
+.board-card { flex: 1 1 320px; }
+
+.turn { font-size: 17px; font-weight: 600; margin: 10px 0 2px; }
+.turn.mine   { color: var(--win); }
+.turn.theirs { color: var(--muted); }
+
+.turn-timer {
+  position: relative;
+  height: 22px;
+  max-width: 420px;
+  margin: 0 auto;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 99px;
+  overflow: hidden;
+}
+.turn-timer-bar {
+  height: 100%;
+  background: var(--accent-strong);
+  transition: width .25s linear;
+}
+.turn-timer.urgent .turn-timer-bar { background: var(--hit); }
+.turn-timer-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+/* ---- board ----------------------------------------------------------- */
+
+.board { display: inline-block; }
+.board-grid {
+  display: grid;
+  grid-template-columns: 22px repeat(10, minmax(24px, 32px));
+  gap: 2px;
+}
+.board-corner { }
+.board-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.cell {
+  aspect-ratio: 1;
+  padding: 0;
+  border: none;
+  border-radius: 3px;
+  background: var(--water);
+  color: #cfe4f5;
+  font-size: 14px;
+  line-height: 1;
+  cursor: default;
+}
+.cell-ship { background: var(--ship); }
+.cell-hit  { background: var(--hit); color: #fff; }
+.cell-miss { background: var(--miss); color: #b9cbd8; }
+.cell-clickable { background: #123a5e; cursor: crosshair; }
+.cell-clickable:hover { background: var(--water-hover); }
+.cell-last { outline: 2px solid #f3d47a; outline-offset: -2px; }
+
+/* ---- fleet ----------------------------------------------------------- */
+
+.fleet { margin-top: 16px; }
+.fleet ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 7px; }
+.fleet li { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+.fleet li.sunk { opacity: .55; }
+.fleet li.sunk .ship-name { text-decoration: line-through; }
+.ship-name { flex: 1; }
+
+.pips { display: flex; gap: 2px; }
+.pip {
+  width: 11px;
+  height: 11px;
+  border-radius: 2px;
+  background: var(--ship);
+}
+.pip-hit  { background: var(--warn); }
+.pip-sunk { background: var(--hit); }
+
+/* ---- chat ------------------------------------------------------------ */
+
+.chat { display: flex; flex-direction: column; min-height: 320px; flex: 1; }
+.chat-log {
+  flex: 1;
+  overflow-y: auto;
+  max-height: 340px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-right: 4px;
+}
+.chat-line { font-size: 13px; }
+.chat-line strong { margin: 0 6px; color: var(--accent); }
+.chat-line.mine strong { color: var(--win); }
+.chat-text { word-break: break-word; }
+
+.chat-input { display: flex; gap: 8px; margin-top: 12px; }
+.chat-input input { flex: 1; }
+
+/* ---- result ---------------------------------------------------------- */
+
+.result-card { max-width: 900px; text-align: center; }
+.result-card .boards { justify-content: center; margin: 20px 0; }
+.result-card h3 { text-align: center; }
+
+/* ---- responsive ------------------------------------------------------ */
+
+@media (max-width: 960px) {
+  .lobby-layout,
+  .game-layout {
+    grid-template-columns: 1fr;
+    grid-template-areas: "status" "boards" "side";
+  }
+}
